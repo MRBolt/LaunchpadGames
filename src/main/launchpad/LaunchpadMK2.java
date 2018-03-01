@@ -8,7 +8,6 @@ import javax.sound.midi.Receiver;
 import javax.sound.midi.ShortMessage;
 import javax.sound.midi.Transmitter;
 
-import common.Coordinate;
 
 /**
  * A class that allows simple communication with a launchpad MIDI device
@@ -131,7 +130,7 @@ public class LaunchpadMK2 implements Launchpad {
 	 * Get a listener <p>
 	 * Use to send instructions from other classes or methods <p>
 	 * To be honest, you may aswell pass the {@link LaunchpadMK2} object to the class/method and
-	 * call {@link LaunchpadMK2.send} from there...
+	 * call {@link launchpad.send} from there...
 	 * @return 
 	 */
 	public LaunchpadListener getListener() {

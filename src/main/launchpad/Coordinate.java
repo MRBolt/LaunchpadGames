@@ -1,4 +1,4 @@
-package common;
+package launchpad;
 
 public class Coordinate {
 	public int x;

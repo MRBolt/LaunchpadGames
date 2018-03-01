@@ -1,11 +1,12 @@
 package reflex;
 
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.InvalidMidiDataException;
 
-import common.Coordinate;
+import launchpad.Coordinate;
 import launchpad.LaunchpadMK2;
 import launchpad.Launchpad;
 import launchpad.LaunchpadListener;
@@ -15,6 +16,10 @@ public class Reflex {
 	public static final int MISSILE_ACC = 400000;
 	public static boolean gameOn = false;
 	public static float speed = 1;
+	
+	public static enum STATES {ACTIVE, INVINCIBLE, PASSIVE};
+	public static int bombCounterMod;
+	public static int activeBombs;
 	
 	public static Launchpad device;
 	
@@ -250,4 +255,294 @@ public class Reflex {
 		}
 	}
 	
+	private abstract class Missile extends Thread{
+		
+		public Coordinate loc;
+		private Coordinate tailLoc;
+		
+		private int dir;
+		private int color;
+		private int vel;
+		
+		
+		public Missile(Coordinate loc) {
+			this.loc = loc;
+			this.tailLoc = new Coordinate(loc.x, loc.y-1);
+			if(this.loc.y < 4) {
+				this.dir = 1;
+				this.color = 40;
+			}else {
+				this.dir = -1;
+				this.color = 52;
+			}
+			
+			this.vel = Reflex.MISSILE_LAUNCH_VEL;	
+			
+			this.start(); 	// Run self
+		}
+		
+		
+		public void run() {
+			int delay = 1000/this.vel;
+			this.loc.shiftY(dir);
+			try {
+				while(!loc.offScreen() && Reflex.gameOn) {
+					if(checkCollision(dir)) {
+						break;	// break out of loop
+					}else {
+						// Draw
+						Reflex.device.send(Reflex.device.toMidi(loc), this.color);
+						Reflex.device.send(Reflex.device.toMidi(tailLoc), this.color + 3);
+						
+						// Delay
+						delay = 1000000/vel;
+						try {
+							TimeUnit.MILLISECONDS.sleep(delay);
+						} catch (InterruptedException e) {
+							break;
+						}
+						// Update velocity
+						this.vel += Reflex.MISSILE_ACC*delay*0.001;
+						
+						// Clear from screen
+						Reflex.device.send(Reflex.device.toMidi(loc), 0); // Turn off
+						Reflex.device.send(Reflex.device.toMidi(tailLoc), 0); // Turn off
+						
+						// Calculate next pos
+						this.tailLoc = this.loc.copy();
+						this.loc.shiftY(dir);
+					}
+				}
+			}catch(Exception e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		public abstract boolean checkCollision(int dir) throws InvalidMidiDataException;
+	}
+	
+	private class Debris extends Thread{
+		
+		
+		private double x;
+		private double y;
+		private double xvel;
+		private double yvel;
+		private double yacc;
+		
+		private final int refreshRate = 30;
+		
+		public Debris(int x, int y, int angle, int vel) {
+			this.x = x;
+			this.y = y;
+			
+			this.xvel = vel*Math.sin(Math.toRadians(angle));
+			this.yvel = vel*Math.cos(Math.toRadians(angle));
+			
+			this.yacc = 100;
+			
+			if(this.y < 4) {
+				this.yacc = - this.yacc;
+			}else {
+				this.yvel = -this.yvel;
+			}
+			this.start();
+		}
+		
+		public void run() {
+			try{
+				while(true) {
+					//Draw
+					Reflex.device.send(Reflex.device.toMidi((int)(x+0.5), (int)(y+0.5)), 3);
+					TimeUnit.MILLISECONDS.sleep(refreshRate);
+					Reflex.device.send(Reflex.device.toMidi((int)(x+0.5), (int)(y+0.5)), 0);
+					// Update yvel
+					yvel += yacc*(refreshRate*0.001);
+					// Update position
+					this.x += xvel*refreshRate*0.001;
+					this.y += yvel*refreshRate*0.001;
+					
+					// Process reflections
+					if(this.y < 1.5) {
+						this.y = 3-this.y;
+						this.yvel = - this.yvel*0.9;
+					}else if(this.y>7.5) {
+						this.y = 15 - this.y;
+						this.yvel = -this.yvel*0.9;
+					}
+					
+					if(this.x < 1) {
+						break;
+					}else if(this.x>8) {
+						break;
+					}
+					
+				}
+				
+			}catch(InterruptedException e) {
+				e.printStackTrace();
+			} catch (InvalidMidiDataException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	
+	private abstract class Bomb extends Thread{
+		public Coordinate loc;
+		
+		private STATES state;
+		private Random random;
+		
+		private int colors[] = {4, 5, 6};
+		private int colorCounter = 0;
+		private int stateCounter = 0;
+		private int strike;
+		
+		private boolean stateChange = true;
+		
+		
+		public Bomb(int x) {
+			Reflex.bombCounterMod = 150;
+			Reflex.activeBombs = 0;
+			strike = 0;
+			
+			random = new Random();
+			this.loc = new Coordinate(x, random.nextInt(2)+4);
+			this.state = STATES.INVINCIBLE;
+			this.stateCounter = 20 + random.nextInt(10);
+			
+			this.start();
+		}
+		
+		public void run() {
+			try {
+				while(Reflex.gameOn) {
+					if(stateChange) {
+						colorCounter = 0;
+						switch(this.state) {
+						case ACTIVE:
+							colors = new int[] {5, 6, 7};
+							break;
+							
+						case PASSIVE:
+							colors = new int[] {21, 22, 23};
+							break;
+						
+						default:
+							colors = new int[] {109, 99, 100, 99};
+							break;
+						}
+						
+						stateChange = false;
+					}
+					
+					Reflex.device.send(Reflex.device.toMidi(loc), colors[colorCounter]);
+					colorCounter++;
+					colorCounter %= colors.length;
+					
+					if(stateCounter>0) {
+						if(this.state == Reflex.STATES.ACTIVE) {
+							stateCounter -= (3-Reflex.activeBombs);
+						}else {
+							stateCounter-= 1;
+						}
+						
+					}else {
+						switch(state) {
+						case ACTIVE:
+							setBombState(STATES.PASSIVE);
+							break;
+							
+						default:
+							setBombState(STATES.ACTIVE);
+							break;
+						}
+					}
+					
+					TimeUnit.MILLISECONDS.sleep(70);
+					
+				}
+			}catch(InterruptedException e) {
+				
+			} catch (InvalidMidiDataException e) {
+				e.printStackTrace();
+			}
+			
+		}
+		
+		private void setBombState(STATES state) {
+			if(this.state != state) {
+				if(this.state == Reflex.STATES.PASSIVE) {
+					Reflex.activeBombs--;
+				}else if(state == Reflex.STATES.PASSIVE) {
+					Reflex.activeBombs++;
+				}
+				this.state = state;
+				this.stateChange = true;	
+			}
+			
+			// COUNTER DEFINITIONS
+			switch(this.state) {
+			case ACTIVE:
+				// Active duration
+				this.stateCounter = (int) (10 + random.nextInt(10 + 3*bombCounterMod));
+				break;
+			case PASSIVE:
+				this.stateCounter = 20;
+				break;
+			default:
+				// Passive and Invincibility duration
+				this.stateCounter = 10;
+				break;
+			}
+			
+		}
+		
+		/**
+		 * nudge the bomb along the y-axis in the direction dictated by
+		 * 'dir'. If the bomb touches a barricade, it calls detonate. 
+		 * @param dir
+		 * @throws InvalidMidiDataException 
+		 */
+		private void nudge(int dir) throws InvalidMidiDataException {
+			Reflex.device.send(Reflex.device.toMidi(loc), 0);
+			this.loc.shiftY(dir);
+			
+			// Speed modifier
+			if(bombCounterMod > 2) {
+				Reflex.bombCounterMod = (int) (Reflex.bombCounterMod*0.94);	
+			}
+			
+			if((this.loc.y==8)||(this.loc.y==1)) {
+				this.detonate(this.loc);
+			}else {
+				setBombState(STATES.INVINCIBLE);
+			}
+		}
+		
+		public void impact(int dir) throws InvalidMidiDataException {
+			switch (this.state) {
+			case ACTIVE:
+				if(((this.loc.y == 7) && (dir == -1)) || ((this.loc.y == 2) && (dir == 1))) {
+					strike ++;
+					if(strike>2) {
+						this.nudge(-dir);
+					}
+				}else {
+					this.nudge(-dir);
+				}
+				break;
+				
+			case PASSIVE:
+				this.nudge(dir);
+				break;
+				
+			default:
+				break;
+			}
+		}
+		
+		public abstract void detonate(Coordinate c);
+	}
 }

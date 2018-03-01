@@ -4,7 +4,6 @@ import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.Receiver;
 
-import common.Coordinate;
 
 public interface Launchpad {
 	public boolean isConnected();
@@ -17,5 +16,4 @@ public interface Launchpad {
 	public int toMidi(Coordinate c);
 	public int toMidi(int x, int y);
 	public Coordinate toCoordinate(int midi);
-	
 }
