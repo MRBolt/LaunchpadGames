@@ -121,34 +121,48 @@ public abstract class Bomb extends Thread{
 		
 	}
 	
-	public void nudge(int dir, int error) {
-		if(error == 0) {
-			Reflex.device.sendNE(Launchpad.toMidi(loc), 0);
-			this.loc.shiftY(dir);
-			setBombState(STATES.INVINCIBLE);
-			if(counterMod > 2) {
-				Bomb.counterMod = (int) (Bomb.counterMod*0.94);	
-			}
-			
-			if((this.loc.y==8)||(this.loc.y==1)) {
-				this.detonate(this.loc);
-			}
+	/**
+	 * nudge the bomb along the y-axis in the direction dictated by
+	 * 'dir'. If the bomb touches a barricade, it calls detonate. 
+	 * @param dir
+	 */
+	private void nudge(int dir) {
+		Reflex.device.sendNE(Launchpad.toMidi(loc), 0);
+		this.loc.shiftY(dir);
+		
+		// Speed modifier
+		if(counterMod > 2) {
+			Bomb.counterMod = (int) (Bomb.counterMod*0.94);	
+		}
+		
+		if((this.loc.y==8)||(this.loc.y==1)) {
+			this.detonate(this.loc);
 		}else {
-			if((this.loc.y != 7)&&(this.loc.y != 2)) {
-				Reflex.device.sendNE(Launchpad.toMidi(loc), 0);
-				this.loc.shiftY(dir);
-				setBombState(STATES.INVINCIBLE);
-				if(counterMod > 2) {
-					Bomb.counterMod = (int) (Bomb.counterMod*0.94);	
-				}
-			}else {
-				// Repeated impact avoiding
-				strike++;
-				if(strike>2) {
-					this.detonate(this.loc);
-				}
-			}
+			setBombState(STATES.INVINCIBLE);
 		}
 	}
+	
+	public void impact(int dir) {
+		switch (this.state) {
+		case ACTIVE:
+			if(((this.loc.y == 7) && (dir == -1)) || ((this.loc.y == 2) && (dir == 1))) {
+				strike ++;
+				if(strike>2) {
+					this.nudge(-dir);
+				}
+			}else {
+				this.nudge(-dir);
+			}
+			break;
+			
+		case PASSIVE:
+			this.nudge(dir);
+			break;
+			
+		default:
+			break;
+		}
+	}
+	
 	public abstract void detonate(Coordinate c);
 }

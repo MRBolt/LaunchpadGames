@@ -1,3 +1,4 @@
+import launchpad.Launchpad;
 import reflex.*;
 
 public class ReflexTest {
@@ -5,6 +6,8 @@ public class ReflexTest {
 		
 		try {
 			Reflex r = new Reflex();
+			r.setDevice(new Launchpad());
+			r.play();
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
