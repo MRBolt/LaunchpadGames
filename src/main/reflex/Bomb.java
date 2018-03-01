@@ -60,7 +60,7 @@ public abstract class Bomb extends Thread{
 					stateChange = false;
 				}
 				
-				Reflex.device.send(LaunchpadMK2.toMidi(loc), colors[colorCounter]);
+				Reflex.device.send(Reflex.device.toMidi(loc), colors[colorCounter]);
 				colorCounter++;
 				colorCounter %= colors.length;
 				
@@ -133,7 +133,7 @@ public abstract class Bomb extends Thread{
 	 * @throws InvalidMidiDataException 
 	 */
 	private void nudge(int dir) throws InvalidMidiDataException {
-		Reflex.device.send(LaunchpadMK2.toMidi(loc), 0);
+		Reflex.device.send(Reflex.device.toMidi(loc), 0);
 		this.loc.shiftY(dir);
 		
 		// Speed modifier

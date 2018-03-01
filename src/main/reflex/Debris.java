@@ -38,9 +38,9 @@ public class Debris extends Thread{
 		try{
 			while(true) {
 				//Draw
-				Reflex.device.send(LaunchpadMK2.toMidi((int)(x+0.5), (int)(y+0.5)), 3);
+				Reflex.device.send(Reflex.device.toMidi((int)(x+0.5), (int)(y+0.5)), 3);
 				TimeUnit.MILLISECONDS.sleep(refreshRate);
-				Reflex.device.send(LaunchpadMK2.toMidi((int)(x+0.5), (int)(y+0.5)), 0);
+				Reflex.device.send(Reflex.device.toMidi((int)(x+0.5), (int)(y+0.5)), 0);
 				// Update yvel
 				yvel += yacc*(refreshRate*0.001);
 				// Update position

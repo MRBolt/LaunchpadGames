@@ -5,7 +5,6 @@ import java.util.concurrent.TimeUnit;
 import javax.sound.midi.InvalidMidiDataException;
 
 import common.Coordinate;
-import launchpad.LaunchpadMK2;
 
 public abstract class Missile extends Thread{
 	
@@ -43,8 +42,8 @@ public abstract class Missile extends Thread{
 					break;	// break out of loop
 				}else {
 					// Draw
-					Reflex.device.send(LaunchpadMK2.toMidi(loc), this.color);
-					Reflex.device.send(LaunchpadMK2.toMidi(tailLoc), this.color + 3);		
+					Reflex.device.send(Reflex.device.toMidi(loc), this.color);
+					Reflex.device.send(Reflex.device.toMidi(tailLoc), this.color + 3);		
 					
 					// Delay
 					delay = 1000000/vel;
@@ -57,8 +56,8 @@ public abstract class Missile extends Thread{
 					this.vel += Reflex.MISSILE_ACC*delay*0.001;
 					
 					// Clear from screen
-					Reflex.device.send(LaunchpadMK2.toMidi(loc), 0); // Turn off
-					Reflex.device.send(LaunchpadMK2.toMidi(tailLoc), 0); // Turn off
+					Reflex.device.send(Reflex.device.toMidi(loc), 0); // Turn off
+					Reflex.device.send(Reflex.device.toMidi(tailLoc), 0); // Turn off
 					
 					// Calculate next pos
 					this.tailLoc = this.loc.copy();

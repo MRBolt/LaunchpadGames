@@ -143,7 +143,7 @@ public class LaunchpadMK2 implements Launchpad {
 		};
 	}
 	
-	public static int toMidi(int x, int y) {
+	public int toMidi(int x, int y) {
 		if(y<9) {
 			return (byte) (y*10 + x);
 		}else {
@@ -151,7 +151,7 @@ public class LaunchpadMK2 implements Launchpad {
 		}
 	}
 	
-	public static int toMidi(Coordinate c) {
+	public int toMidi(Coordinate c) {
 		if(c.y<9) {
 			return (byte) (c.y*10 + c.x);
 		}else {
@@ -159,7 +159,7 @@ public class LaunchpadMK2 implements Launchpad {
 		}
 	}
 	
-	public static Coordinate toCoordinate(int midi) {
+	public Coordinate toCoordinate(int midi) {
 		int x;
 		int y;
 		
@@ -173,18 +173,18 @@ public class LaunchpadMK2 implements Launchpad {
 		return new Coordinate(x, y);
 	}
 	
-	public void clearScreen() {
+	public void clearScreen() throws InvalidMidiDataException {
 		for(int x = 1; x < 10; x++) {
 			for(int y=1; y<10; y++) {
-				this.sendNE(LaunchpadMK2.toMidi(x, y), 0);
+				this.send(this.toMidi(x, y), 0);
 			}
 		}
 	}
 	
-	public void fill(int x1, int y1, int x2, int y2, int color) {
+	public void fill(int x1, int y1, int x2, int y2, int color) throws InvalidMidiDataException {
 		for(int x = x1; x <= x2; x++) {
 			for(int y=y1; y<=y2; y++) {
-				this.sendNE(LaunchpadMK2.toMidi(x, y), color);
+				this.send(this.toMidi(x, y), color);
 			}
 		}
 	}
