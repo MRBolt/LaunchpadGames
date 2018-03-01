@@ -5,6 +5,8 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.InvalidMidiDataException;
 
+import common.Coordinate;
+import launchpad.LaunchpadMK2;
 import launchpad.Launchpad;
 import launchpad.LaunchpadListener;
 
@@ -44,7 +46,7 @@ public class Reflex {
 		Reflex.device.kill();
 	}
 	
-	public void setDevice(Launchpad device) {
+	public void setDevice(LaunchpadMK2 device) {
 		System.out.print("[OK] Setting device... ");
 		Reflex.device = device;
 		System.out.print("[DONE]\n");
@@ -62,11 +64,11 @@ public class Reflex {
 					if(vel != 0){ 		// When button pushed
 						// MISSILE LAUNCHES
 						if(missileEn){	
-							if((Launchpad.toCoordinate(midi).y == 8) || (Launchpad.toCoordinate(midi).y == 1)) {
-								new Missile(Launchpad.toCoordinate(midi)) {
+							if((LaunchpadMK2.toCoordinate(midi).y == 8) || (LaunchpadMK2.toCoordinate(midi).y == 1)) {
+								new Missile(LaunchpadMK2.toCoordinate(midi)) {
 									Bomb b = bombs.get(this.loc.x-1);
 									@Override
-									public boolean checkCollision(int dir) {
+									public boolean checkCollision(int dir) throws InvalidMidiDataException {
 										
 										if(this.loc.y == b.loc.y) {
 											// Impact!
@@ -96,10 +98,10 @@ public class Reflex {
 					
 					// Draw Lives
 					for(int i = 0; i < redTeamLives; i++) {
-						Reflex.device.send(Launchpad.toMidi(9, 8-i), redTeamColors[0]);
+						Reflex.device.send(LaunchpadMK2.toMidi(9, 8-i), redTeamColors[0]);
 					}
 					for(int i = 0; i < blueTeamLives; i++) {
-						Reflex.device.send(Launchpad.toMidi(9, 1+i), blueTeamColors[0]);
+						Reflex.device.send(LaunchpadMK2.toMidi(9, 1+i), blueTeamColors[0]);
 					}
 					
 					System.out.print(".");
@@ -124,8 +126,8 @@ public class Reflex {
 						// Barricade drawing while in game
 						while (Reflex.gameOn) {
 							for(int i=1; i<9; i++) {
-								Reflex.device.sendNE(Launchpad.toMidi(i, 1), blueTeamColors[colorCounter]);
-								Reflex.device.sendNE(Launchpad.toMidi(i, 8), redTeamColors[colorCounter]);
+								Reflex.device.send(LaunchpadMK2.toMidi(i, 1), blueTeamColors[colorCounter]);
+								Reflex.device.send(LaunchpadMK2.toMidi(i, 8), redTeamColors[colorCounter]);
 								colorCounter++;
 								colorCounter %= 4;
 							}
@@ -149,16 +151,16 @@ public class Reflex {
 						
 						TimeUnit.MILLISECONDS.sleep(70);
 						Reflex.device.fill(1, 2,  9, 7, 0);
-						Reflex.device.sendNE(Launchpad.toMidi(9, 1), 0);
-						Reflex.device.sendNE(Launchpad.toMidi(9, 8), 0);
+						Reflex.device.send(LaunchpadMK2.toMidi(9, 1), 0);
+						Reflex.device.send(LaunchpadMK2.toMidi(9, 8), 0);
 						
 						
 						// Update score board
 						for(int i = 0; i < redTeamLives; i++) {
-							Reflex.device.send(Launchpad.toMidi(9, 8-i), redTeamColors[0]);
+							Reflex.device.send(LaunchpadMK2.toMidi(9, 8-i), redTeamColors[0]);
 						}
 						for(int i = 0; i < blueTeamLives; i++) {
-							Reflex.device.send(Launchpad.toMidi(9, 1+i), blueTeamColors[0]);
+							Reflex.device.send(LaunchpadMK2.toMidi(9, 1+i), blueTeamColors[0]);
 						}
 						
 						System.out.println("[OK] Round over! Score: R=" + redTeamLives + " | B=" + blueTeamLives);
@@ -173,12 +175,12 @@ public class Reflex {
 					// Wait for bombs to die, then dispose
 					for(Bomb b : bombs) {
 						b.join();
-						Reflex.device.sendNE(Launchpad.toMidi(b.loc), 0);
+						Reflex.device.send(LaunchpadMK2.toMidi(b.loc), 0);
 					}
 					bombs.clear();			// Empty array (java should release resources)
 					
 					// Display the hole in the wall
-					Reflex.device.sendNE(Launchpad.toMidi(bombDetonationLoc), 0);
+					Reflex.device.send(LaunchpadMK2.toMidi(bombDetonationLoc), 0);
 					
 					// shift the detonation location for the debris spawning
 					if(bombDetonationLoc.y>4) {
@@ -187,12 +189,12 @@ public class Reflex {
 					
 					// Spawn the debris
 					ArrayList<Debris> debris = new ArrayList<Debris>(6);
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -25, device, 27));
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -16, device, 32));
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -6, device, 35));
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 8, device, 35));
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 18, device, 30));
-					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 30, device, 23));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -25, 27));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -16, 32));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, -6, 35));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 8, 35));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 18, 30));
+					debris.add(new Debris(bombDetonationLoc.x, bombDetonationLoc.y, 30, 23));
 					// Wait for them to die, then dispose
 					for(Debris d : debris) {
 						d.join();
@@ -226,13 +228,13 @@ public class Reflex {
 				int countdown = 200;
 				boolean quit = false;
 				for(int i = 1; i<9; i++) {
-					Reflex.device.sendNE(Launchpad.toMidi(9, i), 2);
+					Reflex.device.send(LaunchpadMK2.toMidi(9, i), 2);
 				}
 				nextKeyPress=false;
 				while(!nextKeyPress) {
 					TimeUnit.MILLISECONDS.sleep(50);
 					countdown --;
-					Reflex.device.sendNE(Launchpad.toMidi(9, (int)(countdown*0.05)), 0);
+					Reflex.device.send(LaunchpadMK2.toMidi(9, (int)(countdown*0.05)), 0);
 					if(countdown<20) {
 						quit = true;
 						break;

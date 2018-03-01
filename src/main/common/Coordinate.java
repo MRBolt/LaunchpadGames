@@ -1,4 +1,4 @@
-package reflex;
+package common;
 
 public class Coordinate {
 	public int x;

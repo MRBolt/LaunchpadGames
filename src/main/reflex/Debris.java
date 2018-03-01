@@ -2,7 +2,9 @@ package reflex;
 
 import java.util.concurrent.TimeUnit;
 
-import launchpad.Launchpad;
+import javax.sound.midi.InvalidMidiDataException;
+
+import launchpad.LaunchpadMK2;
 
 public class Debris extends Thread{
 	
@@ -12,12 +14,10 @@ public class Debris extends Thread{
 	private double xvel;
 	private double yvel;
 	private double yacc;
-	private Launchpad device;
 	
 	private final int refreshRate = 30;
 	
-	public Debris(int x, int y, int angle, Launchpad device, int vel) {
-		this.device = device;
+	public Debris(int x, int y, int angle, int vel) {
 		this.x = x;
 		this.y = y;
 		
@@ -38,9 +38,9 @@ public class Debris extends Thread{
 		try{
 			while(true) {
 				//Draw
-				device.sendNE(Launchpad.toMidi((int)(x+0.5), (int)(y+0.5)), 3);
+				Reflex.device.send(LaunchpadMK2.toMidi((int)(x+0.5), (int)(y+0.5)), 3);
 				TimeUnit.MILLISECONDS.sleep(refreshRate);
-				device.sendNE(Launchpad.toMidi((int)(x+0.5), (int)(y+0.5)), 0);
+				Reflex.device.send(LaunchpadMK2.toMidi((int)(x+0.5), (int)(y+0.5)), 0);
 				// Update yvel
 				yvel += yacc*(refreshRate*0.001);
 				// Update position
@@ -65,6 +65,8 @@ public class Debris extends Thread{
 			}
 			
 		}catch(InterruptedException e) {
+			e.printStackTrace();
+		} catch (InvalidMidiDataException e) {
 			e.printStackTrace();
 		}
 	}

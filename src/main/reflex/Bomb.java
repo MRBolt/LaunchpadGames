@@ -3,7 +3,10 @@ package reflex;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 
-import launchpad.Launchpad;
+import javax.sound.midi.InvalidMidiDataException;
+
+import common.Coordinate;
+import launchpad.LaunchpadMK2;
 
 public abstract class Bomb extends Thread{
 	public static enum STATES {ACTIVE, INVINCIBLE, PASSIVE};
@@ -57,7 +60,7 @@ public abstract class Bomb extends Thread{
 					stateChange = false;
 				}
 				
-				Reflex.device.sendNE(Launchpad.toMidi(loc), colors[colorCounter]);
+				Reflex.device.send(LaunchpadMK2.toMidi(loc), colors[colorCounter]);
 				colorCounter++;
 				colorCounter %= colors.length;
 				
@@ -85,6 +88,8 @@ public abstract class Bomb extends Thread{
 			}
 		}catch(InterruptedException e) {
 			
+		} catch (InvalidMidiDataException e) {
+			e.printStackTrace();
 		}
 		
 	}
@@ -125,9 +130,10 @@ public abstract class Bomb extends Thread{
 	 * nudge the bomb along the y-axis in the direction dictated by
 	 * 'dir'. If the bomb touches a barricade, it calls detonate. 
 	 * @param dir
+	 * @throws InvalidMidiDataException 
 	 */
-	private void nudge(int dir) {
-		Reflex.device.sendNE(Launchpad.toMidi(loc), 0);
+	private void nudge(int dir) throws InvalidMidiDataException {
+		Reflex.device.send(LaunchpadMK2.toMidi(loc), 0);
 		this.loc.shiftY(dir);
 		
 		// Speed modifier
@@ -142,7 +148,7 @@ public abstract class Bomb extends Thread{
 		}
 	}
 	
-	public void impact(int dir) {
+	public void impact(int dir) throws InvalidMidiDataException {
 		switch (this.state) {
 		case ACTIVE:
 			if(((this.loc.y == 7) && (dir == -1)) || ((this.loc.y == 2) && (dir == 1))) {

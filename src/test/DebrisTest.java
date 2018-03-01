@@ -4,19 +4,19 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.MidiUnavailableException;
 
-import launchpad.Launchpad;
+import launchpad.LaunchpadMK2;
 import reflex.Debris;
 import reflex.Reflex;
 
 public class DebrisTest {
-	public static Launchpad device;
+	public static LaunchpadMK2 device;
 	public DebrisTest(){
 	}
 	public static void main(String args[]) {
 		Random random = new Random();
 		ArrayList<Debris> debris = new ArrayList<Debris>(4);
 		try {
-			device = new Launchpad();
+			device = new LaunchpadMK2();
 		} catch (MidiUnavailableException e1) {
 			// TODO Auto-generated catch block
 			e1.printStackTrace();
