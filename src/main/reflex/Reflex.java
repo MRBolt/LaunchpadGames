@@ -6,12 +6,12 @@ import java.util.concurrent.TimeUnit;
 
 import javax.sound.midi.InvalidMidiDataException;
 
-import launchpad.Coordinate;
-import launchpad.LaunchpadMK2;
+import launchpadGames.LaunchpadGame;
+import launchpadGames.LaunchpadListener;
 import launchpad.Launchpad;
-import launchpad.LaunchpadListener;
+import launchpad.LaunchpadMK2;
 
-public class Reflex {
+public class Reflex implements LaunchpadGame{
 	public static final int MISSILE_LAUNCH_VEL = 30000;
 	public static final int MISSILE_ACC = 400000;
 	public static boolean gameOn = false;
@@ -45,19 +45,28 @@ public class Reflex {
 		System.out.print("[DONE]\n");
 	}
 	
+	public static void main(String args[]) {
+		try {
+			Reflex r = new Reflex();
+			r.setDevice(new LaunchpadMK2());
+			r.play();
+		} catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+	
+	
 	public void kill() {
 		Reflex.gameOn = false;
 		this.missileEn = false;
 		Reflex.device.kill();
 	}
 	
-	public void setDevice(LaunchpadMK2 device) {
-		System.out.print("[OK] Setting device... ");
+	public void setDevice(Launchpad device) {
 		Reflex.device = device;
-		System.out.print("[DONE]\n");
 	}
 	
-	public void play() throws InvalidMidiDataException, InterruptedException {
+	public void play() throws Exception {
 		if(Reflex.device == null) {
 			System.out.println("[ER] Please set a midi device using 'Reflex.setDevice(Launchpad device);' !");
 		}else {
@@ -69,8 +78,9 @@ public class Reflex {
 					if(vel != 0){ 		// When button pushed
 						// MISSILE LAUNCHES
 						if(missileEn){	
-							if((Reflex.device.toCoordinate(midi).y == 8) || (Reflex.device.toCoordinate(midi).y == 1)) {
-								new Missile(Reflex.device.toCoordinate(midi)) {
+							int[] coordinates = device.toCoordinates(midi);
+							if((coordinates[1] == 8) || (coordinates[1] == 1)) {
+								new Missile(new Coordinate(coordinates[0], coordinates[1])) {
 									Bomb b = bombs.get(this.loc.x-1);
 									@Override
 									public boolean checkCollision(int dir) throws InvalidMidiDataException {
@@ -180,12 +190,12 @@ public class Reflex {
 					// Wait for bombs to die, then dispose
 					for(Bomb b : bombs) {
 						b.join();
-						Reflex.device.send(Reflex.device.toMidi(b.loc), 0);
+						Reflex.device.send(Reflex.device.toMidi(b.loc.x, b.loc.y), 0);
 					}
 					bombs.clear();			// Empty array (java should release resources)
 					
 					// Display the hole in the wall
-					Reflex.device.send(Reflex.device.toMidi(bombDetonationLoc), 0);
+					Reflex.device.send(Reflex.device.toMidi(bombDetonationLoc.x, bombDetonationLoc.y), 0);
 					
 					// shift the detonation location for the debris spawning
 					if(bombDetonationLoc.y>4) {
@@ -255,6 +265,11 @@ public class Reflex {
 		}
 	}
 	
+	
+	
+
+	//////////////////////////////////////////////// PRIVATE CLASSES /////////////////////////////////////////////////////////
+	
 	private abstract class Missile extends Thread{
 		
 		public Coordinate loc;
@@ -291,8 +306,8 @@ public class Reflex {
 						break;	// break out of loop
 					}else {
 						// Draw
-						Reflex.device.send(Reflex.device.toMidi(loc), this.color);
-						Reflex.device.send(Reflex.device.toMidi(tailLoc), this.color + 3);
+						Reflex.device.send(Reflex.device.toMidi(loc.x, loc.y), this.color);
+						Reflex.device.send(Reflex.device.toMidi(tailLoc.x, tailLoc.y), this.color + 3);
 						
 						// Delay
 						delay = 1000000/vel;
@@ -305,8 +320,8 @@ public class Reflex {
 						this.vel += Reflex.MISSILE_ACC*delay*0.001;
 						
 						// Clear from screen
-						Reflex.device.send(Reflex.device.toMidi(loc), 0); // Turn off
-						Reflex.device.send(Reflex.device.toMidi(tailLoc), 0); // Turn off
+						Reflex.device.send(Reflex.device.toMidi(loc.x, loc.y), 0); // Turn off
+						Reflex.device.send(Reflex.device.toMidi(tailLoc.x, tailLoc.y), 0); // Turn off
 						
 						// Calculate next pos
 						this.tailLoc = this.loc.copy();
@@ -437,7 +452,7 @@ public class Reflex {
 						stateChange = false;
 					}
 					
-					Reflex.device.send(Reflex.device.toMidi(loc), colors[colorCounter]);
+					Reflex.device.send(Reflex.device.toMidi(loc.x, loc.y), colors[colorCounter]);
 					colorCounter++;
 					colorCounter %= colors.length;
 					
@@ -499,14 +514,8 @@ public class Reflex {
 			
 		}
 		
-		/**
-		 * nudge the bomb along the y-axis in the direction dictated by
-		 * 'dir'. If the bomb touches a barricade, it calls detonate. 
-		 * @param dir
-		 * @throws InvalidMidiDataException 
-		 */
 		private void nudge(int dir) throws InvalidMidiDataException {
-			Reflex.device.send(Reflex.device.toMidi(loc), 0);
+			Reflex.device.send(Reflex.device.toMidi(loc.x, loc.y), 0);
 			this.loc.shiftY(dir);
 			
 			// Speed modifier
@@ -545,4 +554,34 @@ public class Reflex {
 		
 		public abstract void detonate(Coordinate c);
 	}
+	
+	private class Coordinate {
+		public int x;
+		public int y;
+		
+		public Coordinate(int x, int y) {
+			this.x = x;
+			this.y = y;
+		}
+		
+		public void shift(int x, int y) {
+			this.x += x;
+			this.y += y;
+		}
+		
+		public void shiftY(int y) {
+			this.y += y;
+		}
+		
+		public boolean offScreen() {
+			if((this.y > 9) || (this.x > 9) || (this.y < 1) || (this.x < 1)){
+				return true;
+			}else return false;
+		}
+		
+		public Coordinate copy() {
+			return new Coordinate(x, y);
+		}
+	}
+	
 }

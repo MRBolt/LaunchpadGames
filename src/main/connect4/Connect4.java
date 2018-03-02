@@ -5,9 +5,8 @@ import java.util.concurrent.TimeUnit;
 import javax.sound.midi.InvalidMidiDataException;
 
 import launchpad.Launchpad;
-import launchpad.LaunchpadListener;
 import launchpad.LaunchpadMK2;
-import launchpad.Coordinate;
+import launchpadGames.LaunchpadListener;
 
 public class Connect4 {
 	private int grid[];
@@ -33,16 +32,16 @@ public class Connect4 {
 			@Override
 			public void action(byte midi, byte vel) {
 				if(vel >0) {	// note on
-					if(device.toCoordinate(midi).x < 9) {
+					if(device.toCoordinates(midi)[0] < 9) {
 						if(allowDrops) {
-							if(grid[Connect4.gridMap(device.toCoordinate(midi).x, 8)] == 0) {
+							if(grid[Connect4.gridMap(device.toCoordinates(midi)[0], 8)] == 0) {
 								new Thread() {
 									public void run() {
 										try {
-											Coordinate c = Connect4.device.toCoordinate(midi);
+											int[] coordinates = device.toCoordinates(midi);
 											int color = nextColor;
 											switchColor();
-											if(drop(c.x, color)) {
+											if(drop(coordinates[0], color)) {
 												allowDrops = false;
 												gameOn = false;
 											}
@@ -57,7 +56,7 @@ public class Connect4 {
 							}
 						}
 					}else {
-						switch(device.toCoordinate(midi).y) {
+						switch(device.toCoordinates(midi)[1]) {
 						case 4:	// Stop button
 							quit = true;
 							System.out.println("QUITTING");
@@ -121,7 +120,7 @@ public class Connect4 {
 						}
 					}else {
 						for(int i : winningSlots) {
-							device.send(i, grid[Connect4.gridMap(device.toCoordinate(i).x, device.toCoordinate(i).y)]);
+							device.send(i, grid[Connect4.gridMap(device.toCoordinates(i))]);
 						}
 					}
 					counter++;
@@ -199,6 +198,14 @@ public class Connect4 {
 	
 	private static int gridMap(int x, int y) {
 		return y*8 + x - 9;
+	}
+	
+	private static int gridMap(int[] xy) {
+		if(xy.length < 2) {
+			return -1;
+		}
+		
+		return xy[1]*8 + xy[0] - 9;
 	}
 	
 	private boolean victoryCheck(int x, int y) {

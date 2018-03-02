@@ -13,7 +13,7 @@ import javax.sound.midi.Transmitter;
  * @author Marco
  *
  */
-public class LaunchpadMK2 implements Launchpad {
+public class LaunchpadMini implements Launchpad {
 	
 	private MidiDevice deviceIn;
 	private MidiDevice deviceOut;
@@ -24,7 +24,7 @@ public class LaunchpadMK2 implements Launchpad {
 	 * Establish connection with a Launchpad MK2 device. 
 	 * @throws MidiUnavailableException
 	 */
-	public LaunchpadMK2() throws MidiUnavailableException{
+	public LaunchpadMini() throws MidiUnavailableException{
 		
 		deviceIn = null;
 		deviceOut = null;
@@ -34,7 +34,7 @@ public class LaunchpadMK2 implements Launchpad {
 		
 		// Look for deviceCue in any of the infos
 		for(MidiDevice.Info i : MidiSystem.getMidiDeviceInfo()) {
-			if(i.getName().contains("Launchpad MK2")) {
+			if(i.getName().contains("Launchpad Mini")) {
 				// Check to see if its a receiver or transmitter
 				if(MidiSystem.getMidiDevice(i).getMaxReceivers()!=0) {
 					// Device is output
@@ -82,9 +82,10 @@ public class LaunchpadMK2 implements Launchpad {
 	
 	public int toMidi(int x, int y) {
 		if(y<9) {
-			return (byte) (y*10 + x);
+			return (byte) ((8-y)*16 + x);
 		}else {
-			return (byte) (y*10 + x + 13);
+			//TODO: figure out what's going on with ctl messages
+			return (byte) (-1);
 		}
 	}
 	
@@ -108,15 +109,12 @@ public class LaunchpadMK2 implements Launchpad {
 			midi -= 13;
 		}
 		
-		coordinates[1] = (int)(midi*0.1);
-		coordinates[0] = midi-coordinates[1]*10;
+		coordinates[1] = 8-midi%16;
+		coordinates[0] = midi%16;
 		
 		return coordinates;
 	}
 	
-	/**
-	 * test
-	 */
 	public void clearScreen() throws InvalidMidiDataException {
 		for(int x = 1; x < 10; x++) {
 			for(int y=1; y<10; y++) {
