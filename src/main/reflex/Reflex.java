@@ -25,8 +25,8 @@ public class Reflex {
 	
 	// IN-GAME STUFF
 	private ArrayList<Bomb> bombs;
-	private int redTeamLives = 3;
-	private int blueTeamLives = 3;
+	private int redTeamLives = 4;
+	private int blueTeamLives = 4;
 	
 	private int redTeamColors[] = {53, 54, 55, 54};
 	private int blueTeamColors[] = {41, 42, 43, 42};
@@ -246,8 +246,8 @@ public class Reflex {
 					}
 				}
 				if(!quit) {
-					this.redTeamLives = 3;
-					this.blueTeamLives = 3;
+					this.redTeamLives = 4;
+					this.blueTeamLives = 4;
 					continue;	
 				}else break;
 			}

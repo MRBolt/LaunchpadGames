@@ -104,7 +104,11 @@ public class LaunchpadMK2 implements Launchpad {
 	 * @throws InvalidMidiDataException
 	 */
 	public void send(int midi, int vel) throws InvalidMidiDataException {
-		lpReceiver.send(new ShortMessage(ShortMessage.NOTE_ON, 0, midi, vel ), -1);
+		if(midi<104) {
+			lpReceiver.send(new ShortMessage(ShortMessage.NOTE_ON, 0, midi, vel ), -1);
+		}else {
+			lpReceiver.send(new ShortMessage(ShortMessage.CONTROL_CHANGE, 0, midi, vel), -1);
+		}
 	}
 	
 	/**
