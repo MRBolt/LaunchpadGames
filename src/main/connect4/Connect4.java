@@ -6,9 +6,10 @@ import javax.sound.midi.InvalidMidiDataException;
 
 import launchpad.Launchpad;
 import launchpad.LaunchpadMK2;
+import launchpadGames.LaunchpadGame;
 import launchpadGames.LaunchpadListener;
 
-public class Connect4 {
+public class Connect4 implements LaunchpadGame {
 	private int grid[];
 	private int winningSlots[];
 	public static Launchpad device;
@@ -16,11 +17,17 @@ public class Connect4 {
 	private boolean allowDrops = false;
 	private boolean gameOn;
 	private boolean quit;
+	private boolean slotsAvailable = true;
 	private boolean waiting;
 	private int nextColor = 41;
 	
 	public void play() throws InterruptedException, InvalidMidiDataException {
 		
+		if(device == null) {
+			throw new InvalidMidiDataException("Please connect a midi device!");
+		}
+		
+
 		// Initialise variables
 		nextColor = 41;
 		quit = false;
@@ -46,7 +53,6 @@ public class Connect4 {
 												gameOn = false;
 											}
 										} catch (Exception e1) {
-											// TODO Auto-generated catch block
 											e1.printStackTrace();
 										}
 										
@@ -61,6 +67,13 @@ public class Connect4 {
 							quit = true;
 							System.out.println("QUITTING");
 							break;
+							
+						case 5: // SendB
+							// Fake start new round
+							gameOn = false;
+							slotsAvailable = false;
+							break;
+							
 						}
 					}
 					
@@ -82,10 +95,15 @@ public class Connect4 {
 			}
 			winningSlots = new int[4];
 
-			System.out.print("[DONE]\n[OK] Clearing screen... ");
-			
+			for(int i = 0; i<4; i++) {
+				winningSlots[i] = 11;
+			}
 			device.clearScreen();
+			device.send(device.toMidi(9, 4), 7);
+
+			device.send(device.toMidi(9, 5), 23);
 			gameOn = true;
+			slotsAvailable = true;
 			allowDrops = true;
 			
 			System.out.print("[DONE]\n[OK] Game Start!\n");
@@ -94,22 +112,20 @@ public class Connect4 {
 			this.switchColor(); // twice so that the loser goes first
 			
 			
-			boolean noMoreSlots = false;
-			
-			while(gameOn && !noMoreSlots && !quit) {
+			while(gameOn && slotsAvailable && !quit) {
 				// Wait for game to end
-				TimeUnit.MILLISECONDS.sleep(100);
 				for(int i=56; i<64; i++) {
 					if(grid[i]==0) {
-						noMoreSlots = false;
+						slotsAvailable = true;
 						break;
-					}else noMoreSlots = true;
+					}else slotsAvailable = false;
 				}
+				TimeUnit.MILLISECONDS.sleep(100);
 			}
 			
 			this.allowDrops = false;
 			
-			if(!noMoreSlots && !quit) {	// if game ended due to victory...
+			if(slotsAvailable && !quit) {	// if game ended due to victory...
 				// Victory display
 				int counter = 0;
 				this.waiting = true;
@@ -306,14 +322,14 @@ public class Connect4 {
 		}
 	}
 	
-	public static void setDevice(Launchpad device) {
+	public void setDevice(Launchpad device) {
 		Connect4.device = device;
 	}
 	
 	public static void main(String args[]) {
 		Connect4 game = new Connect4();
 		try {
-			Connect4.setDevice(new LaunchpadMK2());
+			Connect4.device = new LaunchpadMK2();
 			
 			game.play();
 			
