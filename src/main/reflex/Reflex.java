@@ -243,13 +243,15 @@ public class Reflex implements LaunchpadGame{
 				}
 			}	// End infinite loop
 			
-			// Game victory breaks out here
-			System.out.println("[OK] Reflex game over...");
-			
-			nextKeyPress = false;
-			while(!nextKeyPress) {
-				TimeUnit.MILLISECONDS.sleep(20);
+			if(!quit) {
+				System.out.println("[OK] Reflex game over...");
+				
+				nextKeyPress = false;
+				while(!nextKeyPress) {
+					TimeUnit.MILLISECONDS.sleep(20);
+				}
 			}
+			
 			Reflex.device.clearScreen();
 		}
 	}
@@ -551,11 +553,6 @@ public class Reflex implements LaunchpadGame{
 		public Coordinate(int x, int y) {
 			this.x = x;
 			this.y = y;
-		}
-		
-		public void shift(int x, int y) {
-			this.x += x;
-			this.y += y;
 		}
 		
 		public void shiftY(int y) {

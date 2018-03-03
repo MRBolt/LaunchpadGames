@@ -72,7 +72,8 @@ public interface Launchpad {
 				return new LaunchpadMK2();
 			}
 		}
-		return new LaunchpadMK2();
+		
+		throw new MidiUnavailableException("No compatible Launchpad device found!");
 	}
 	
 	/**

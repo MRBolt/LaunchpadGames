@@ -293,7 +293,6 @@ public class Connect4 implements LaunchpadGame {
 			tempi = x-1;
 			tempj = y-1;
 		}
-		System.out.println("checking from "+x + ", " + y + " | -"+tempi+" to +"+tempj);
 		for(int i = -tempi; i<=tempj; i++) {
 			if(grid[Connect4.gridMap(x+i, y-i)] != temp) {		// if it's different
 				if(grid[Connect4.gridMap(x+i, y-i)] != 0) {		// if not black
